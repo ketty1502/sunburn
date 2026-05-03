@@ -148,6 +148,26 @@ document.getElementById("start").addEventListener("click", () => {
   s.classList.add("hidden");
   setTimeout(() => s.remove(), 800);
 });
+
+ function forcePlay() {
+  const iframe = document.getElementById("frame");
+
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage(
+      '{"event":"command","func":"playVideo","args":""}',
+      "*"
+    );
+  }
+}
+
+// Retry play multiple times (Instagram workaround)
+setInterval(forcePlay, 1500);
+
+// Also resume when user comes back to tab
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) forcePlay();
+});
+ 
 </script>
 
 </body>
