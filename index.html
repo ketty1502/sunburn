@@ -113,6 +113,23 @@
   </div>
 </div>
 
+ <div id="open-browser" style="
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 18px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  display: none;
+  z-index: 20;
+  cursor: pointer;
+">
+  Open in browser for full video
+</div>
+
 <script>
 /* 🎬 RANDOM VIDEOS */
 const VIDEOS = [
@@ -167,7 +184,31 @@ setInterval(forcePlay, 1500);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) forcePlay();
 });
- 
+
+
+function isInstagram() {
+  return navigator.userAgent.toLowerCase().includes("instagram");
+}
+
+if (isInstagram()) {
+  const btn = document.getElementById("open-browser");
+  btn.style.display = "block";
+
+  btn.addEventListener("click", () => {
+    const url = window.location.href;
+
+    // Try Android intent (opens Chrome)
+    window.location.href =
+      "intent://" + url.replace(/^https?:\/\//, "") +
+      "#Intent;scheme=https;package=com.android.chrome;end";
+
+    // Fallback (iOS)
+    setTimeout(() => {
+      window.open(url, "_blank");
+    }, 500);
+  });
+}
+
 </script>
 
 </body>
