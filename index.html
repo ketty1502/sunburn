@@ -115,31 +115,19 @@
 
   let player;
   let playerReady = false;
-  let startRequested = false;
+  let userClicked = false;
 
-  // Load YouTube API safely
-  function loadYouTubeAPI() {
-    return new Promise((resolve) => {
-      if (window.YT && window.YT.Player) {
-        resolve();
-      } else {
-        const tag = document.createElement("script");
-        tag.src = "https://www.youtube.com/iframe_api";
-        window.onYouTubeIframeAPIReady = () => resolve();
-        document.head.appendChild(tag);
-      }
-    });
-  }
+  // Load API
+  const tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
 
-  // Create player
-  async function initPlayer() {
-    await loadYouTubeAPI();
-
+  window.onYouTubeIframeAPIReady = function () {
     player = new YT.Player("yt", {
       videoId: id,
       playerVars: {
         autoplay: 0,
-        mute: 1,               // REQUIRED for autoplay
+        mute: 1,        // critical
         loop: 1,
         playlist: id,
         controls: 0,
@@ -151,37 +139,32 @@
       events: {
         onReady: () => {
           playerReady = true;
-          if (startRequested) startVideo();
+          tryStart();
         }
       }
     });
+  };
+
+  function tryStart() {
+    if (playerReady && userClicked) {
+      player.playVideo();
+
+      // show video
+      document.getElementById("player-wrap").classList.add("visible");
+      document.getElementById("shield").style.display = "block";
+
+      const screen = document.getElementById("start-screen");
+      screen.classList.add("hidden");
+      setTimeout(() => screen.remove(), 800);
+    }
   }
 
-  function startVideo() {
-    if (!playerReady) return;
-
-    player.playVideo();
-
-    // Optional: unmute after start
-    setTimeout(() => {
-      try { player.unMute(); } catch(e) {}
-    }, 500);
-
-    document.getElementById("player-wrap").classList.add("visible");
-    document.getElementById("shield").style.display = "block";
-
-    const screen = document.getElementById("start-screen");
-    screen.classList.add("hidden");
-    setTimeout(() => screen.remove(), 800);
-  }
-
-  // Click handler
   document.getElementById("start-screen").addEventListener("click", () => {
-    startRequested = true;
-    startVideo();
+    userClicked = true;
+    tryStart();
   });
 
-  // Resize to cover screen
+  // Resize logic (unchanged)
   const RATIO = 16 / 9;
 
   function resize() {
@@ -205,10 +188,8 @@
 
   resize();
   window.addEventListener("resize", resize);
-
-  // Init
-  initPlayer();
 </script>
+
 
 </body>
 </html>
