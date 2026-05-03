@@ -15,54 +15,84 @@
     background:#000;
   }
 
+  /* VIDEO COVER (no stretch, only crop) */
   #video {
-    position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    width:100vw;
-    height:100vh;
-    pointer-events:none;
-    opacity:0;
-    transition:opacity 0.8s;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 177.78vh;   /* 16:9 ratio */
+    height: 100vh;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease;
   }
 
-  #video.visible {
-    opacity:1;
+  /* If screen is wider */
+  @media (min-aspect-ratio: 16/9) {
+    #video {
+      width: 100vw;
+      height: 56.25vw;
+    }
   }
 
   iframe {
-    width:100%;
-    height:100%;
-    border:none;
+    width: 100%;
+    height: 100%;
+    border: none;
   }
 
+  #video.visible {
+    opacity: 1;
+  }
+
+  /* Interaction blocker */
+  #blocker {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+  }
+
+  /* Start screen */
   #start {
-    position:fixed;
-    inset:0;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:#000;
-    cursor:pointer;
-    z-index:10;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+    cursor: pointer;
+    z-index: 10;
+    transition: opacity 0.8s;
   }
 
+  #start.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Play button */
   #btn {
-    width:80px;
-    height:80px;
-    border-radius:50%;
-    border:2px solid #fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+  }
+
+  #start:hover #btn {
+    transform: scale(1.08);
+    border-color: #fff;
   }
 
   svg {
-    width:28px;
-    height:28px;
-    fill:#fff;
-    margin-left:5px;
+    width: 28px;
+    height: 28px;
+    fill: #fff;
+    margin-left: 5px;
   }
 </style>
 </head>
@@ -73,6 +103,8 @@
   <iframe id="frame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 </div>
 
+<div id="blocker"></div>
+
 <div id="start">
   <div id="btn">
     <svg viewBox="0 0 24 24">
@@ -82,23 +114,36 @@
 </div>
 
 <script>
-const VIDEO_ID = "SsarK4y9eiI";
+/* 🎬 RANDOM VIDEOS */
+const VIDEOS = [
+  "SsarK4y9eiI"
+  
+];
+
+const VIDEO_ID = VIDEOS[Math.floor(Math.random() * VIDEOS.length)];
 
 document.getElementById("start").addEventListener("click", () => {
 
   const iframe = document.getElementById("frame");
 
-  // DIRECT autoplay URL (this is the key fix)
   iframe.src =
     "https://www.youtube.com/embed/" + VIDEO_ID +
-    "?autoplay=1&mute=1&loop=1&playlist=" + VIDEO_ID +
+    "?autoplay=1&mute=1&enablejsapi=1&loop=1&playlist=" + VIDEO_ID +
     "&controls=0&modestbranding=1&rel=0";
 
   document.getElementById("video").classList.add("visible");
 
+  // 🔊 UNMUTE after a moment
+  setTimeout(() => {
+    iframe.contentWindow.postMessage(
+      '{"event":"command","func":"unMute","args":""}',
+      "*"
+    );
+  }, 2000);
+
   // remove start screen
   const s = document.getElementById("start");
-  s.style.opacity = "0";
+  s.classList.add("hidden");
   setTimeout(() => s.remove(), 800);
 });
 </script>
