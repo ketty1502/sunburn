@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Watch</title>
+
   <style>
     *, *::before, *::after {
       margin: 0;
@@ -18,13 +19,12 @@
       background: #000;
     }
 
-    /* ── Video layer ── */
+    /* Video wrapper */
     #player-wrap {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      pointer-events: none;
       opacity: 0;
       transition: opacity 0.8s ease;
     }
@@ -34,27 +34,24 @@
     }
 
     #player-wrap iframe {
-      display: block;
       width: 100%;
       height: 100%;
       border: none;
-      pointer-events: none;
     }
 
-    /* ── Invisible shield over iframe ── */
+    /* Invisible shield */
     #shield {
       position: fixed;
       inset: 0;
-      z-index: 10;
-      background: transparent;
+      z-index: 5;
       display: none;
     }
 
-    /* ── Start screen ── */
+    /* Start screen */
     #start-screen {
       position: fixed;
       inset: 0;
-      z-index: 20;
+      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -77,7 +74,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: border-color 0.2s, transform 0.2s;
+      transition: 0.2s;
     }
 
     #start-screen:hover #play-btn {
@@ -93,11 +90,12 @@
     }
   </style>
 </head>
+
 <body>
 
 <!-- Video -->
 <div id="player-wrap">
-  <iframe id="yt" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  <div id="yt"></div>
 </div>
 
 <div id="shield"></div>
@@ -105,71 +103,86 @@
 <!-- Start overlay -->
 <div id="start-screen">
   <div id="play-btn">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 24 24">
       <polygon points="6,3 20,12 6,21"/>
     </svg>
   </div>
 </div>
 
 <script>
-  // ─── YOUR VIDEO IDs HERE ───────────────────────────────────────────────────
-  const VIDEO_IDS = [
-    "SsarK4y9eiI",
-  ];
-  // ──────────────────────────────────────────────────────────────────────────
-
+  const VIDEO_IDS = ["SsarK4y9eiI"];
   const id = VIDEO_IDS[Math.floor(Math.random() * VIDEO_IDS.length)];
-
-  // Load YouTube API
-  const tag = document.createElement("script");
-  tag.src = "https://www.youtube.com/iframe_api";
-  document.head.appendChild(tag);
 
   let player;
   let playerReady = false;
   let startRequested = false;
 
-  window.onYouTubeIframeAPIReady = function () {
+  // Load YouTube API safely
+  function loadYouTubeAPI() {
+    return new Promise((resolve) => {
+      if (window.YT && window.YT.Player) {
+        resolve();
+      } else {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        window.onYouTubeIframeAPIReady = () => resolve();
+        document.head.appendChild(tag);
+      }
+    });
+  }
+
+  // Create player
+  async function initPlayer() {
+    await loadYouTubeAPI();
+
     player = new YT.Player("yt", {
       videoId: id,
       playerVars: {
         autoplay: 0,
+        mute: 1,               // REQUIRED for autoplay
         loop: 1,
         playlist: id,
         controls: 0,
         disablekb: 1,
         fs: 0,
-        iv_load_policy: 3,
         modestbranding: 1,
-        rel: 0,
-        showinfo: 0,
+        rel: 0
       },
       events: {
         onReady: () => {
           playerReady = true;
-          if (startRequested) beginPlayback();
-        },
-      },
+          if (startRequested) startVideo();
+        }
+      }
     });
-  };
+  }
 
-  function beginPlayback() {
+  function startVideo() {
+    if (!playerReady) return;
+
     player.playVideo();
+
+    // Optional: unmute after start
+    setTimeout(() => {
+      try { player.unMute(); } catch(e) {}
+    }, 500);
+
     document.getElementById("player-wrap").classList.add("visible");
     document.getElementById("shield").style.display = "block";
 
     const screen = document.getElementById("start-screen");
     screen.classList.add("hidden");
-    setTimeout(() => screen.remove(), 900);
+    setTimeout(() => screen.remove(), 800);
   }
 
+  // Click handler
   document.getElementById("start-screen").addEventListener("click", () => {
     startRequested = true;
-    if (playerReady) beginPlayback();
+    startVideo();
   });
 
-  // ── Cover-fill sizing ────────────────────────────────────────────────────
-  const NATIVE_RATIO = 16 / 9;
+  // Resize to cover screen
+  const RATIO = 16 / 9;
 
   function resize() {
     const sw = window.innerWidth;
@@ -177,21 +190,25 @@
     const screenRatio = sw / sh;
 
     let w, h;
-    if (screenRatio > NATIVE_RATIO) {
+    if (screenRatio > RATIO) {
       w = sw;
-      h = sw / NATIVE_RATIO;
+      h = sw / RATIO;
     } else {
       h = sh;
-      w = sh * NATIVE_RATIO;
+      w = sh * RATIO;
     }
 
     const wrap = document.getElementById("player-wrap");
-    wrap.style.width  = w + "px";
+    wrap.style.width = w + "px";
     wrap.style.height = h + "px";
   }
 
   resize();
   window.addEventListener("resize", resize);
+
+  // Init
+  initPlayer();
 </script>
+
 </body>
 </html>
